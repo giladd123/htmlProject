@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"type": "pwa-chrome",
+				"request": "launch",
+				"name": "Open helloworld.html",
+				"file": "c:\\Users\\gilad\\Documents\\for work\\helloworld.html"
+			
+			}
+		]
+	}
+}

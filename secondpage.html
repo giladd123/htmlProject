@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="square.css">
+        <link rel="stylesheet" href="sidebar.css">
+    
+    </head>
+    <body bgcolor="#FFF5F5">
+        <div id="mySidenav" class="sidenav">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <a href="#">Groceries</a>
+            <a href="#">Going out</a>
+            <a href="#">Online shopping</a>
+            <a href="#">Other</a>
+            <a href="#">Settings</a>
+            <a href="#">Log out</a>
+          </div>
+          <script>
+            function openNav() {
+              document.getElementById("mySidenav").style.width = "250px";
+            }
+            
+            function closeNav() {
+              document.getElementById("mySidenav").style.width = "0";
+            }
+            </script>
+          <!-- Use any element to open the sidenav -->
+         
+          
+          <!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+          <div id="main">
+            <div id="topbar" style="margin-top: 20px;margin-bottom: 50px ;vertical-align: middle;">
+                
+                <span onclick="openNav()"><img src="C:\Users\gilad\Pictures\work\hamburger-menu.png" style="width: 40px;text-align: left; margin: 20px 0 0 20px;float: left;"></span>
+                <center>
+                       <p style="font-size: 50px;margin: 10px 0 0 0;margin-right: 40px;">amount of money in the account</p>
+                </center>
+                
+            </div>
+            
+        
+                <center>
+        
+            <h3>
+                <table>
+                    <tr style="font-size: 26px;">
+                     
+                        <th>
+                            Place
+                        </th>
+                        <th>
+                            Amount
+                        </th>
+                    
+                    </tr>
+                    <tr>
+                        <td>
+                            Shufersal
+                        </td>
+                        <td>
+                            -21 NIS
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            ebay
+                        </td>
+                        <td>
+                            -104 NIS
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            bit
+                        </td>
+                        <td>
+                            +213 NIS
+                        </td>
+                    </tr>
+                </table>
+            </h3>
+            </center>
+          </div>
+       
+    </body>
+</html>
