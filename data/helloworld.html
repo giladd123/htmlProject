@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>learning html</title>
-
+<link rel="stylesheet" href="http://localhost:8000/getLoginCss">
     <link rel="stylesheet" href="http://localhost:8000/getCss">
     <style>
         table,tr,th,td {
@@ -14,6 +14,31 @@
             width: 50%;
         }
     </style>
+    <script>
+        window.onload=function(){
+        let dialogUp = true;
+        const signUpButton = document.getElementById('signUp');
+        const signInButton = document.getElementById('signIn');
+        const container = document.getElementById('container');
+
+        signUpButton.addEventListener('click', () => {
+	    container.classList.add("right-panel-active");
+        });
+
+        signInButton.addEventListener('click', () => {
+    	container.classList.remove("right-panel-active");
+        });
+        function signUp(data){
+            console.log(data);
+            // var xhr = new XMLHttpRequest();
+            // xhr.open("POST", "http://localhost:8000/signUp", true);
+            // xhr.setRequestHeader('Content-Type', 'application/json');
+            // xhr.send(data);
+            // console.log(xhr.response);     
+        }
+}
+
+    </script>
 </head>
 <body bgcolor="#FFF5F5">
     <script>
@@ -39,34 +64,65 @@
         }
         
     </script>
-    
-    
-<center><h1>Welcome to EasyBanking</h1></center>
-<br>
-<center><h2>Please choose an account</h2></center>
+    <div class="container" id="container" style="left: 0%;top: 50%;">
+        <div class="form-container sign-up-container">
+            <form action="http://localhost:8000/signUp" method="POST">
+                <h1>Create Account</h1>
+                <span>or use your email for registration</span>
+                <input type="email" name="email" placeholder="Email" />
+                <input type="password" name="password" placeholder="Password" />
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+        <div class="form-container sign-in-container">
+            <form action="http://localhost:8000/logToAccount" method="POST">
+                <h1>Sign in</h1>
+                <span>or use your account</span>
+                <input type="email" name="email" placeholder="Email" />
+                <input type="password" name="password" placeholder="Password" />
+                <a href="">Forgot your password?</a>
+                <button>Sign In</button>
+            </form>
+        </div>
+        <div class="overlay-container">
+            <div class="overlay">
+                <div class="overlay-panel overlay-left">
+                    <h1>Welcome Back!</h1>
+                    <p>To keep connected with us please login with your personal info</p>
+                    <button class="ghost" id="signIn">Sign In</button>
+                </div>
+                <div class="overlay-panel overlay-right">
+                    <h1>Hello, Friend!</h1>
+                    <p>Enter your personal details and start journey with us</p>
+                    <button class="ghost" id="signUp">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<center>
+    
+<center><h1>Welcome to EasyBanking</h1>
+<br>
+<h2>Please choose an account</h2>
+
+
     <div id="rectangle">
         <img id="bankImage" src="http://localhost:8000/getImageSrc" width="75%" style="margin-top: 20px;margin-bottom: 10px;"  >
         <br>
         <div id="arrow" onclick="leftArrowClick()" style="transform: rotate(135deg);margin-right: 180px;"></div>
-        <div id="arrow" onclick="rightArrowClick()" style="transform: rotate(315deg);" >
-    </div>
+        <div id="arrow" onclick="rightArrowClick()" style="transform: rotate(315deg);" ></div>
 
-    <p style="font-size: 24px;margin-bottom: 15px;">Account number<br>Account description</p>
+        <p style="font-size: 24px;margin-bottom: 15px;">Account number<br>Account description</p>
     
     
         <div id="dot1" class="dot" style="background-color: black;"></div> 
         <div id="dot2" class="dot"></div> 
         <div id="dot3" class="dot"></div> 
-        <div id="dot4" class="dot"></div> 
+        <!-- <div id="dot4" class="dot"></div> 
         <div id="dot5" class="dot"></div> 
         <div id="dot6" class="dot"></div> 
-        <div id="dot7" class="dot"></div> 
-    
-
-
-</div>
+        <div id="dot7" class="dot"></div>  -->
+    </div>
 <a href="http://localhost:8000/secondPage"><button style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">login</button></a><br>
 <button style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">add new account</button><br>
 <button style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">remove account</button>

@@ -73,9 +73,10 @@ const requestListener = function (req, res) {
           let htmlString;
           createHtmlPage(result).then((result)=>{
             htmlString = result;
+            console.log(htmlString);
+            res.end(htmlString);
           });
-          console.log(htmlString);
-          res.end(htmlString);
+
         }
       });
     });
