@@ -9,7 +9,7 @@ let num = 1;
 let db = new sqlite3.Database(dbFile);
 
 const requestListener = function (req, res) {
-  console.log("request received "+num);
+  console.log("request received "+num+" "+req.url);
   num++;
   if(req.url=='/'){
     res.writeHead(200, {'Content-Type': 'text/html'});
@@ -123,10 +123,47 @@ const requestListener = function (req, res) {
             });
       }
     });
-  }else if(req.url.includes('/image/')){
+  }else if(req.url.includes('image/')){
     res.writeHead(200,{'Content-Type': 'image/png'});
     let myReadStream = fs.createReadStream(__dirname+'\\data\\images\\'+req.url.substr(7)+'.png');
     myReadStream.pipe(res);
+  }else if(req.url == '/firstPageCss'){
+    res.writeHead(200,{'Content-Type': 'text/css'});
+    let myReadStream = fs.createReadStream(__dirname+'\\data\\firstPage.css');
+    myReadStream.pipe(res);
+  }else if(req.url == '/login'){
+    let body = '';
+    req.on('data', chunk => {
+        body += chunk.toString(); // convert Buffer to string
+    });
+    req.on('end', () => {
+      let email;
+      let password;
+      body = "&"+body;
+      email = getParameterByName("email",body);
+      password = getParameterByName("password",body);
+      new Promise((resolve,reject)=>{
+          let sql = "SELECT UID FROM UserTable WHERE Email = '"+email+"' AND Password = '"+password+"'";
+          db.get(sql,[],(err,row)=>{
+              if(err){
+                reject(err);
+              }else{
+                resolve(row)
+              }
+          });
+      }).then((uuid)=>{
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        let htmlString;
+        if(uuid){
+          createHtmlPage(uuid.UID).then((result)=>{
+            htmlString = result;
+            res.end(htmlString);
+          });
+        }else{
+          res.end('<!DOCTYPE html> <html><head> </head><body bgcolor="#FFF5F5"><p> this account does not exist</p> <br> <a href="http://localhost:8000"><button>Go back</button></a> </body></html>');
+        }
+      });
+    });
   }
 }
 function uuidv4() {
@@ -241,17 +278,17 @@ async function createHtmlPage(uuid){
 
     xString+="]";
 
-    body = '<script>\n let rows = '+xString+';let account = 0;document.onreadystatechange = () =>{if(document.readystate==="interactive"){changeData()}};\n function rightArrowClick(){\n if(document.getElementById("dot"+(account+1))!=null){\n'+
+    body = '<script>\n document.addEventListener("readystatechange",event=>{if(event.target.readyState === "complete")changeData();}); let rows = '+xString+';let account = 0;document.onreadystatechange = () =>{if(document.readystate==="interactive"){changeData()}};\n function rightArrowClick(){\n if(document.getElementById("dot"+(account+1))!=null){\n'+
     ' let divToGray  = document.getElementById("dot"+account);account++;let divToBlack = document.getElementById("dot"+account);'+
     'divToBlack.style.backgroundColor = "#000000";divToGray.style.backgroundColor = "#C4C4C4";changeData();}}function leftArrowClick(){'+
     'if(account!=0){let divToGray  = document.getElementById("dot"+account);account--;let divToBlack = document.getElementById("dot"+account);'+
     'divToBlack.style.backgroundColor = "#000000";divToGray.style.backgroundColor = "#C4C4C4";changeData();}}'
-    +'function changeData(){let textNum = document.getElementById("TextNum");textNum.innerHTML = rows[account][1];let textDesc = document.getElementById("TextDesc");'+
-      'textDesc.innerHTML = rows[account][3];let img = document.getElementById("bankImage");img.src = "http://localhost:8000/image/"+rows[account][2];}'
+    +'\nfunction changeData(){\nif(rows!="[]"){\nlet textNum = document.getElementById("TextNum");\ntextNum.innerHTML = rows[account][1];\nlet textDesc = document.getElementById("TextDesc");\n'+
+      'textDesc.innerHTML = rows[account][3];\nlet img = document.getElementById("bankImage");\nimg.src = "http://localhost:8000/image/"+rows[account][2];\n}}'
     +'</script>';
     
     body = body + '<center><h1>Welcome to EasyBanking</h1><br><h2>Please choose an account</h2><div id="rectangle">'+
-            '<img id="bankImage" src ="http://localhost:8000/images/NoData.png" onload="changeData()"  width="75%" style="margin-top: 20px;margin-bottom: 10px;"  ><br>'+
+            '<img id="bankImage" src ="http://localhost:8000/image/NoData"   width="75%" style="margin-top: 20px;margin-bottom: 10px;"  ><br>'+
             '<div class="arrow" id="leftArrow" onclick="leftArrowClick()" style="transform: rotate(135deg);margin-right: 180px;"></div>'+
             '<div class="arrow" id="rightArrow" onclick="rightArrowClick()" style="transform: rotate(315deg);" ></div><p id="TextNum" style="font-size: 24px;margin-bottom:'
             +' 15px;">Account number</p><p id="TextDesc" style="font-size: 24px;margin-bottom: 15px;">Account description</p>';
@@ -264,19 +301,23 @@ async function createHtmlPage(uuid){
       body+="></div> ";
       account++;
     });
-    body = body + '</div><a href="http://localhost:8000/secondPage"><button  style="margin-top: 20px;font-size: 30px;border-radius:'
+    body = body +'<script>'
+    +'function formOpen(){'
+    +'if(document.getElementById("form").style.display == "flex"){document.getElementById("form").style.display = "none";}'
+    +'else{document.getElementById("form").style.display = "flex";}}'
+    +' </script>'+ '</div><a href="http://localhost:8000/secondPage"><button   style="margin-top: 20px;font-size: 30px;border-radius:'
     +'20%;background-color: #FFB6B6;">login</button></a><br>'
-    +'<button style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">add new account</button><br>'
-    +'<form action="http://localhost:8000/addNewAccount" method="POST">'
+    +'<button onclick="formOpen()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">add new account</button><br>'
+    +'<form id="form" style="display:none" action="http://localhost:8000/addNewAccount" method="POST">'
     +'<input type="text" name="bankNum" placeholder="Bank account Number"/>'
     +'<input type="text" name="bankDesc" placeholder="Bank account description"/>'
     +'<input type="radio" name="bank" value="habenleumi" checked/>habenleumi'
     +'<input type="radio" name="bank" value="hapoalim"/>hapoalim'
-    +'<input type="radio" name="bank" value="bank yahav"/>bank yahav'
-    +'<input type="radio" name="bank" value="bank leumi"/>bank leumi'
-    +'<input type="radio" name="bank" value="mizrachi tfahut"/>mizrachi tfahut'
+    +'<input type="radio" name="bank" value="yahav"/>bank yahav'
+    +'<input type="radio" name="bank" value="leumi"/>bank leumi'
+    +'<input type="radio" name="bank" value="mizrachi-tfahut"/>mizrachi tfahut'
     +'<input id="formuuid" name="uuid" type="hidden" value="'+uuid+'">'
-    +'<button type="submit">add account</button>'
+    +'<button type="submit" style="margin-top:10px;">add account</button>'
     +'</form>'
     +'<button style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">remove account</button>'
     +'</center>';
