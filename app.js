@@ -9,6 +9,7 @@ let num = 1;
 let db = new sqlite3.Database(dbFile);
 
 const requestListener = function (req, res) {
+   
   console.log("request received "+num+" "+req.url);
   num++;
   if(req.url=='/'){
@@ -164,6 +165,75 @@ const requestListener = function (req, res) {
         }
       });
     });
+  }else if(req.url =='/removeAcc'){
+    let body = '';
+    req.on('data', chunk => {
+        body += chunk.toString(); // convert Buffer to string
+    });
+    req.on('end', () => {
+      let accToRemove;
+      let uuid;
+      body = "&"+body;
+      accToRemove = getParameterByName("accToRemove",body);
+      uuid = getParameterByName("uuid",body);
+      new Promise((resolve,reject)=>{
+        db.run("DELETE FROM '"+uuid+"' WHERE Num="+accToRemove,[],(err)=>{
+          if(err){
+            reject(err);
+          }else{
+            resolve();
+          }
+        });
+      }).then(()=>{
+        new Promise((resolve,reject)=>{
+            let sql = "SELECT * FROM '"+uuid+"'";
+            db.all(sql,[],(err,rows)=>{
+                if(err){
+                  reject(err);
+                }else{
+                  resolve(rows);
+                }
+            });
+        }).then((rows)=>{
+          let thisAcc=accToRemove;
+          let sql = "UPDATE '"+uuid+"' SET Num = "+thisAcc+" WHERE Num = "+(+thisAcc+1);
+          let update = new Promise((resolve,reject)=>{
+            db.run(sql,[],(err)=>{
+              if(err){
+                reject(err);
+              }else{
+                resolve();
+              }
+            });
+          });
+          thisAcc++;
+          let p = update;
+          for(;thisAcc<rows.length;thisAcc++ ){
+            p=p.then(() =>{
+              new Promise((resolve,reject)=>{
+                sql = "UPDATE '"+uuid+"' SET Num = "+thisAcc+" WHERE Num = "+(thisAcc+1);
+                db.run(sql,[],(err)=>{
+                  if(err){
+                    reject(err);
+                  }else{
+                    resolve();
+                  }
+                }); 
+              });
+            });
+          }
+          p.then(()=>{
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            let htmlString;
+            createHtmlPage(uuid).then((result)=>{
+              htmlString = result;
+              res.end(htmlString);
+            });
+          });
+        });
+ 
+      });
+    });
   }
 }
 function uuidv4() {
@@ -285,6 +355,7 @@ async function createHtmlPage(uuid){
     'divToBlack.style.backgroundColor = "#000000";divToGray.style.backgroundColor = "#C4C4C4";changeData();}}'
     +'\nfunction changeData(){\nif(rows!="[]"){\nlet textNum = document.getElementById("TextNum");\ntextNum.innerHTML = rows[account][1];\nlet textDesc = document.getElementById("TextDesc");\n'+
       'textDesc.innerHTML = rows[account][3];\nlet img = document.getElementById("bankImage");\nimg.src = "http://localhost:8000/image/"+rows[account][2];\n}}'
+    +'function getCurrentAccount(){document.getElementById("acc").value=account;}'
     +'</script>';
     
     body = body + '<center><h1>Welcome to EasyBanking</h1><br><h2>Please choose an account</h2><div id="rectangle">'+
@@ -308,7 +379,7 @@ async function createHtmlPage(uuid){
     +' </script>'+ '</div><a href="http://localhost:8000/secondPage"><button   style="margin-top: 20px;font-size: 30px;border-radius:'
     +'20%;background-color: #FFB6B6;">login</button></a><br>'
     +'<button onclick="formOpen()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">add new account</button><br>'
-    +'<form id="form" style="display:none" action="http://localhost:8000/addNewAccount" method="POST">'
+    +'<form id="form" class="form" style="display:none" action="http://localhost:8000/addNewAccount" method="POST">'
     +'<input type="text" name="bankNum" placeholder="Bank account Number"/>'
     +'<input type="text" name="bankDesc" placeholder="Bank account description"/>'
     +'<input type="radio" name="bank" value="habenleumi" checked/>habenleumi'
@@ -319,7 +390,11 @@ async function createHtmlPage(uuid){
     +'<input id="formuuid" name="uuid" type="hidden" value="'+uuid+'">'
     +'<button type="submit" style="margin-top:10px;">add account</button>'
     +'</form>'
-    +'<button style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">remove account</button>'
+    +'<form action="http://localhost:8000/removeAcc" method="POST">'
+    +'<input type="hidden" id = "acc" name="accToRemove" value=0> '
+    +'<input type="hidden" name="uuid" value="'+uuid+'"> '
+    +'<button type="submit" onclick="getCurrentAccount()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">remove account</button>'
+    +'</form>'
     +'</center>';
     // concatenate header string
     // concatenate body string
