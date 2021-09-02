@@ -197,7 +197,7 @@ const requestListener = function (req, res) {
       body = "&" + body;
       accToRemove = getParameterByName("accToRemove", body);
       uuid = getParameterByName("uuid", body);
-      removeAccount(uuid,accToRemove).then(()=>{
+      removeAccount(uuid, accToRemove).then(() => {
         res.writeHead(200, { "Content-Type": "text/html" });
         let htmlString;
         createHtmlPage(uuid).then((result) => {
@@ -209,56 +209,52 @@ const requestListener = function (req, res) {
   }
 };
 
-async function removeAccount(uuid,accToRemove) {
-    await new Promise((resolve, reject) => {
-      db.run(
-        "DELETE FROM '" + uuid + "' WHERE Num=" + accToRemove,
-        [],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        }
-      );
+async function removeAccount(uuid, accToRemove) {
+  await new Promise((resolve, reject) => {
+    db.run("DELETE FROM '" + uuid + "' WHERE Num=" + accToRemove, [], (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
     });
-    let rows;
-    await new Promise((resolve,reject)=>{
-      let sql = `SELECT * FROM '${uuid}'`;
-      db.all(sql, [], (err, result) => {
+  });
+  let rows;
+  await new Promise((resolve, reject) => {
+    let sql = `SELECT * FROM '${uuid}'`;
+    db.all(sql, [], (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  }).then((result) => {
+    rows = result;
+  });
+  let thisAcc = accToRemove;
+  let sql = `UPDATE '${uuid}' SET Num = ${thisAcc} WHERE Num = ${thisAcc + 1}`;
+  await new Promise((resolve, reject) => {
+    db.run(sql, [], (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+  for (; thisAcc < rows.length; thisAcc++) {
+    await new Promise((resolve, reject) => {
+      sql = `UPDATE '${uuid}' SET Num = ${thisAcc} WHERE Num = ${+thisAcc + 1}`;
+      db.run(sql, [], (err) => {
         if (err) {
           reject(err);
         } else {
-          resolve(result);
-        }
-      });
-    }).then((result)=>{
-      rows = result
-    });
-    let thisAcc = accToRemove;
-    let sql =`UPDATE '${uuid}' SET Num = ${thisAcc} WHERE Num = ${thisAcc+1}`;
-    await new Promise((resolve,reject)=>{
-      db.run(sql,[],(err)=>{
-        if(err){
-          reject(err);
-        }else{
           resolve();
         }
       });
     });
-    for(;thisAcc<rows.length;thisAcc++){
-      await new Promise((resolve,reject)=>{
-        sql =`UPDATE '${uuid}' SET Num = ${thisAcc} WHERE Num = ${+thisAcc+1}`;
-        db.run(sql,[],(err)=>{
-          if(err){
-            reject(err);
-          }else{
-            resolve();
-          }
-        });
-      });
-    }
+  }
 }
 
 function uuidv4() {
