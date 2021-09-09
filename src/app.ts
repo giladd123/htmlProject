@@ -89,6 +89,7 @@ const requestListener = function (req, res) {
       let bankDesc;
       let bank;
       let uuid;
+      let sql;
       body = "&" + body;
       bankNum = getParameterByName("bankNum", body);
       bank = getParameterByName("bank", body);
@@ -122,7 +123,7 @@ const requestListener = function (req, res) {
               if (err) {
                 reject(err);
               } else {
-                resolve();
+                resolve(undefined);
               }
             });
           }).then(() => {
@@ -171,11 +172,11 @@ const requestListener = function (req, res) {
             resolve(row);
           }
         });
-      }).then((uuid) => {
+      }).then((uuid: { UID: string }) => {
         res.writeHead(200, { "Content-Type": "text/html" });
         let htmlString;
-        if (uuid) {
-          createHtmlPage(uuid.UID).then((result) => {
+        if (uuid.UID) {
+          createHtmlPage(uuid).then((result) => {
             htmlString = result;
             res.end(htmlString);
           });
@@ -215,7 +216,7 @@ async function removeAccount(uuid, accToRemove) {
       if (err) {
         reject(err);
       } else {
-        resolve();
+        resolve(undefined);
       }
     });
   });
@@ -239,7 +240,7 @@ async function removeAccount(uuid, accToRemove) {
       if (err) {
         reject(err);
       } else {
-        resolve();
+        resolve(undefined);
       }
     });
   });
@@ -250,7 +251,7 @@ async function removeAccount(uuid, accToRemove) {
         if (err) {
           reject(err);
         } else {
-          resolve();
+          resolve(undefined);
         }
       });
     });
@@ -302,12 +303,12 @@ async function insertNewUser(sql, email, password) {
                   if (err) {
                     reject(err);
                   }
-                  resolve();
+                  resolve(undefined);
                 });
               });
               // get the last insert id
               console.log(`A row has been inserted with rowid ${this.lastID}`);
-              resolve();
+              resolve(undefined);
             });
           });
         }
@@ -356,18 +357,18 @@ async function createHtmlPage(uuid) {
     </style>`;
 
       let x = new Array(rows.length);
-      for (i = 0; i < x.length; i++) {
+      for (let i = 0; i < x.length; i++) {
         x[i] = new Array(4);
       }
 
-      for (i = 0; i < rows.length; i++) {
+      for (let i = 0; i < rows.length; i++) {
         x[i][0] = rows[i].Num;
         x[i][1] = rows[i].BankNum;
         x[i][2] = rows[i].Bank;
         x[i][3] = rows[i].Desc;
       }
       let xString = "[";
-      for (i = 0; i < x.length; i++) {
+      for (let i = 0; i < x.length; i++) {
         xString += '["';
         xString += x[i][0] + '","';
         xString += x[i][1] + '","';
@@ -537,6 +538,3 @@ async function createHtmlPage(uuid) {
 //       });
 //   }
 //   module.exports.insertNewData = insertNewData;
-function hello(yes, no, aaaaa) {
-  let aldskjfaladhjfjasdhfkjsdhfkdsjfhkdsfjhdjfkh;
-}
