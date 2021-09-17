@@ -19,10 +19,21 @@ const requestListener = function (req, res) {
         let myReadStream = fs.createReadStream(__dirname + "\\data\\style.css");
         myReadStream.pipe(res);
     }
-    else if (req.url == "/secondPage") {
-        res.writeHead(200, { "Content-Type": "text/html" });
-        let myReadStream = fs.createReadStream(__dirname + "\\data\\secondpage.html");
-        myReadStream.pipe(res);
+    else if (req.url == "/secondpage") {
+        res.writeHead(200, { "Content-Type": "text/html;charset: UTF-8" });
+        let body = "";
+        req.on("data", (chunk) => {
+            body += chunk.toString(); // convert Buffer to string
+        });
+        req.on("end", () => {
+            body = "&" + body;
+            let acc = getParameterByName("bankAccount", body);
+            let pass = getParameterByName("password", body);
+            console.log(acc + " " + pass);
+            createSecondPage(acc, pass).then((newHtml) => {
+                res.end(newHtml);
+            });
+        });
     }
     else if (req.url == "/getHamMenu") {
         res.writeHead(200, { "Content-Type": "image/png" });
@@ -424,6 +435,13 @@ async function createHtmlPage(uuid) {
       function getCurrentAccount(){
         document.getElementById("acc").value=account;
       }
+      function enterDataForLogin(){
+        if(rows!="[]"){
+          let bankAcc = document.getElementById("bankAccountLog");
+          bankAcc.value = rows[account][1];
+          document.getElementById("loginForm").submit();
+        }
+    }
       </script>`;
         body =
             body +
@@ -466,11 +484,13 @@ async function createHtmlPage(uuid) {
         }
       </script>
       </div>
-      <a href="http://localhost:8000/secondPage">
-        <button  style="margin-top: 20px;font-size: 30px;border-radius:20%;background-color: #FFB6B6;">
-          login
-        </button>
-      </a>
+      <form action = "http://localhost:8000/secondpage" id="loginForm" method="POST">
+        <input id = "bankAccountLog" type="hidden" name="bankAccount">
+        <input id="passwordLog" type="password" placeholder="password" name="password">
+         <button onclick="enterDataForLogin()" style="margin-top: 20px;font-size: 30px;border-radius:20%;background-color: #FFB6B6;">
+             login
+         </button>
+      </form>
       <br>
       <button onclick="formOpen()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">
       add new account
@@ -535,3 +555,58 @@ async function createHtmlPage(uuid) {
 //       });
 //   }
 //   module.exports.insertNewData = insertNewData;
+async function createSecondPage(bankAcc, pass) {
+    let html;
+    let scraper = require("./scraper.js");
+    html = await new Promise((resolve, reject) => {
+        fs.readFile(`${__dirname}\\data\\secondpage.html`, "utf8", (err, data) => {
+            if (err) {
+                reject(err);
+            }
+            resolve(data.toString());
+        });
+    });
+    let index = html.search(`<tr style="font-size: 26px">`);
+    index += `<tr style="font-size: 26px">`.length;
+    let table = await scraper.getBankData("habenleumi", bankAcc, pass);
+    console.log(table);
+    let insert;
+    insert = `
+          <th>date</th>
+          <th>details</th>
+          <th>kind</th>
+          <th>credit</th>
+          <th>debit</th>
+          <th>balance</th>
+          </tr>`;
+    for (let i = 0; i < table.dates.length; i++) {
+        insert += `<tr>`;
+        for (let j = 0; j < 6; j++) {
+            insert += `<td>`;
+            switch (j) {
+                case 0:
+                    insert += table.dates[i];
+                    break;
+                case 1:
+                    insert += table.details[i];
+                    break;
+                case 2:
+                    insert += table.kind[i];
+                    break;
+                case 3:
+                    insert += table.credit[i];
+                    break;
+                case 4:
+                    insert += table.debit[i];
+                    break;
+                case 5:
+                    insert += table.balance[i];
+                    break;
+            }
+            insert += `</td>`;
+        }
+        insert += `</tr>`;
+    }
+    let output = [html.slice(0, index), insert, html.slice(index)].join("");
+    return output.replace("amount of money in the account", table.balance[0]);
+}
