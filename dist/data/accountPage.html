@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>learning html</title>
+    <link rel="stylesheet" href="http://localhost:8000/getLoginCss" />
+    <link rel="stylesheet" href="http://localhost:8000/getCss" />
+    <style>
+      table,
+      tr,
+      th,
+      td {
+        border: 1px solid black;
+        text-align: center;
+      }
+      table {
+        width: 50%;
+      }
+    </style>
+  </head>
+  <body bgcolor="#FFF5F5">
+    <script>
+        let uuid = "";
+        document.addEventListener("readystatechange",event=>{
+          if(event.target.readyState === "complete")
+          changeData();
+        }); 
+        
+        let account = 0;
+        function rightArrowClick(){
+          if(document.getElementById("dot"+(account+1))!=null){
+            let divToGray  = document.getElementById("dot"+account);
+            account++;
+            let divToBlack = document.getElementById("dot"+account);
+            divToBlack.style.backgroundColor = "#000000";
+            divToGray.style.backgroundColor = "#C4C4C4";
+            changeData();
+          }
+        }
+        function leftArrowClick(){
+          if(account!=0){
+            let divToGray  = document.getElementById("dot"+account);
+            account--;
+            let divToBlack = document.getElementById("dot"+account);
+            divToBlack.style.backgroundColor = "#000000";
+            divToGray.style.backgroundColor = "#C4C4C4";
+            changeData();
+          }
+        }
+        function changeData(){
+          if(rows!="[]"){
+            let textNum = document.getElementById("TextNum");
+            textNum.innerHTML = rows[account][1];
+            let textDesc = document.getElementById("TextDesc");
+            textDesc.innerHTML = rows[account][3];
+            let img = document.getElementById("bankImage");
+            img.src = "http://localhost:8000/image/"+rows[account][2];
+          }
+        }
+        function getCurrentAccount(){
+          document.getElementById("acc").value=account;
+        }
+        function enterDataForLogin(){
+          if(rows!="[]"){
+            let bankAcc = document.getElementById("bankAccountLog");
+            bankAcc.value = rows[account][1];
+            document.getElementById("loginForm").submit();
+          }
+      }
+        </script>
+        <center>
+            <h1>
+              Welcome to EasyBanking
+            <h1>
+            <br>
+            <h2>
+              Please choose an account
+            </h2>
+            <div id="rectangle">
+              <img id="bankImage" src = "http://localhost:8000/image/NoData" width="75%" style="margin-top: 20px;margin-bottom: 10px;">
+              <br>
+              <div class="arrow" id="leftArrow" onclick="leftArrowClick()" style="transform: rotate(135deg);margin-right: 180px;"></div>
+              <div class="arrow" id="rightArrow" onclick="rightArrowClick()" style="transform: rotate(315deg);" ></div>
+              <p id="TextNum" style="font-size: 24px;margin-bottom:15px;">Account number</p>
+              <p id="TextDesc" style="font-size: 24px;margin-bottom: 15px;">Account description</p>
+            </div>
+            <form action = "http://localhost:8000/secondpage" id="loginForm" method="POST">
+              <input id = "bankAccountLog" type="hidden" name="bankAccount">
+              <input id="passwordLog" type="password" placeholder="password" name="password">
+               <button onclick="enterDataForLogin()" style="margin-top: 20px;font-size: 30px;border-radius:20%;background-color: #FFB6B6;">
+                   login
+               </button>
+            </form>
+            <br>
+            <button onclick="formOpen()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">
+            add new account
+            </button>
+            <br>
+            <form id="form" class="form" style="display:none" action="http://localhost:8000/addNewAccount" method="POST">
+              <input type="text" name="bankNum" placeholder="Bank account Number"/>
+              <input type="text" name="bankDesc" placeholder="Bank account description"/>
+              <input type="radio" name="bank" value="habenleumi" checked/>habenleumi
+              <input type="radio" name="bank" value="hapoalim"/>hapoalim
+              <input type="radio" name="bank" value="yahav"/>bank yahav
+              <input type="radio" name="bank" value="leumi"/>bank leumi
+              <input type="radio" name="bank" value="mizrachi-tfahut"/>mizrachi tfahut
+              <input id="formuuid" name="uuid" type="hidden" value="${uuid}">
+              <button type="submit" style="margin-top:10px;">add account</button>
+              </form>
+              <form action="http://localhost:8000/removeAcc" method="POST">
+              <input type="hidden" id = "acc" name="accToRemove" value=0> 
+              <input type="hidden" name="uuid" value="${uuid}"> 
+              <button type="submit" onclick="getCurrentAccount()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">
+              remove account
+              </button>
+              </form>
+              </center>
+  </body>
+</html>

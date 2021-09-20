@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head> </head>
+  <body>
+    <script>
+      let text = document.getElementById("text");
+      fetch("http://localhost:8000/getDataFromAccount", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uuid: "b4988200-d2cd-4e1b-a0a4-3f263ec43ccf" }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+          text.innerHTML = data.toString();
+        });
+    </script>
+    <p id="text"></p>
+  </body>
+</html>

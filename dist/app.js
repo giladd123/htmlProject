@@ -45,21 +45,6 @@ const requestListener = function (req, res) {
         let myReadStream = fs.createReadStream(__dirname + "\\data\\logincss.css");
         myReadStream.pipe(res);
     }
-    else if (req.url == "/logToAccount") {
-        // res.writeHead(200);
-        // console.log(req.body.email);
-        // res.end();
-        let body = "";
-        req.on("data", (chunk) => {
-            body += chunk.toString(); // convert Buffer to string
-        });
-        req.on("end", () => {
-            body = "&" + body;
-            let email = getParameterByName("email", body);
-            let password = getParameterByName("password", body);
-            // db.close;
-        });
-    }
     else if (req.url == "/signUp") {
         let body = "";
         req.on("data", (chunk) => {
@@ -610,3 +595,4 @@ async function createSecondPage(bankAcc, pass) {
     let output = [html.slice(0, index), insert, html.slice(index)].join("");
     return output.replace("amount of money in the account", table.balance[0]);
 }
+export {};
