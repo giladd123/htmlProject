@@ -17,103 +17,231 @@
         width: 50%;
       }
     </style>
-  </head>
-  <body bgcolor="#FFF5F5">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script>
-        let uuid = "";
-        document.addEventListener("readystatechange",event=>{
-          if(event.target.readyState === "complete")
-          changeData();
-        }); 
-        
-        let account = 0;
-        function rightArrowClick(){
-          if(document.getElementById("dot"+(account+1))!=null){
-            let divToGray  = document.getElementById("dot"+account);
-            account++;
-            let divToBlack = document.getElementById("dot"+account);
-            divToBlack.style.backgroundColor = "#000000";
-            divToGray.style.backgroundColor = "#C4C4C4";
-            changeData();
-          }
+      let rows = [];
+      let uuid = "";
+      let account = 0;
+      document.addEventListener("readystatechange", (event) => {
+        if (event.target.readyState === "complete") {
+          getAccountData();
         }
-        function leftArrowClick(){
-          if(account!=0){
-            let divToGray  = document.getElementById("dot"+account);
-            account--;
-            let divToBlack = document.getElementById("dot"+account);
-            divToBlack.style.backgroundColor = "#000000";
-            divToGray.style.backgroundColor = "#C4C4C4";
-            changeData();
-          }
+      });
+      function formOpen() {
+        if (document.getElementById("form").style.display == "flex") {
+          document.getElementById("form").style.display = "none";
+        } else {
+          document.getElementById("form").style.display = "flex";
         }
-        function changeData(){
-          if(rows!="[]"){
-            let textNum = document.getElementById("TextNum");
-            textNum.innerHTML = rows[account][1];
-            let textDesc = document.getElementById("TextDesc");
-            textDesc.innerHTML = rows[account][3];
-            let img = document.getElementById("bankImage");
-            img.src = "http://localhost:8000/image/"+rows[account][2];
-          }
-        }
-        function getCurrentAccount(){
-          document.getElementById("acc").value=account;
-        }
-        function enterDataForLogin(){
-          if(rows!="[]"){
-            let bankAcc = document.getElementById("bankAccountLog");
-            bankAcc.value = rows[account][1];
-            document.getElementById("loginForm").submit();
-          }
       }
-        </script>
-        <center>
-            <h1>
-              Welcome to EasyBanking
-            <h1>
-            <br>
-            <h2>
-              Please choose an account
-            </h2>
-            <div id="rectangle">
-              <img id="bankImage" src = "http://localhost:8000/image/NoData" width="75%" style="margin-top: 20px;margin-bottom: 10px;">
-              <br>
-              <div class="arrow" id="leftArrow" onclick="leftArrowClick()" style="transform: rotate(135deg);margin-right: 180px;"></div>
-              <div class="arrow" id="rightArrow" onclick="rightArrowClick()" style="transform: rotate(315deg);" ></div>
-              <p id="TextNum" style="font-size: 24px;margin-bottom:15px;">Account number</p>
-              <p id="TextDesc" style="font-size: 24px;margin-bottom: 15px;">Account description</p>
-            </div>
-            <form action = "http://localhost:8000/secondpage" id="loginForm" method="POST">
-              <input id = "bankAccountLog" type="hidden" name="bankAccount">
-              <input id="passwordLog" type="password" placeholder="password" name="password">
-               <button onclick="enterDataForLogin()" style="margin-top: 20px;font-size: 30px;border-radius:20%;background-color: #FFB6B6;">
-                   login
-               </button>
-            </form>
-            <br>
-            <button onclick="formOpen()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">
-            add new account
-            </button>
-            <br>
-            <form id="form" class="form" style="display:none" action="http://localhost:8000/addNewAccount" method="POST">
-              <input type="text" name="bankNum" placeholder="Bank account Number"/>
-              <input type="text" name="bankDesc" placeholder="Bank account description"/>
-              <input type="radio" name="bank" value="habenleumi" checked/>habenleumi
-              <input type="radio" name="bank" value="hapoalim"/>hapoalim
-              <input type="radio" name="bank" value="yahav"/>bank yahav
-              <input type="radio" name="bank" value="leumi"/>bank leumi
-              <input type="radio" name="bank" value="mizrachi-tfahut"/>mizrachi tfahut
-              <input id="formuuid" name="uuid" type="hidden" value="${uuid}">
-              <button type="submit" style="margin-top:10px;">add account</button>
-              </form>
-              <form action="http://localhost:8000/removeAcc" method="POST">
-              <input type="hidden" id = "acc" name="accToRemove" value=0> 
-              <input type="hidden" name="uuid" value="${uuid}"> 
-              <button type="submit" onclick="getCurrentAccount()" style="margin-top: 20px;font-size: 30px;border-radius: 20%;background-color: #FFB6B6;">
-              remove account
-              </button>
-              </form>
-              </center>
+      async function getAccountData() {
+        console.log(uuid);
+        console.log(JSON.stringify({ uuid: uuid }));
+        fetch("http://localhost:8000/getDataFromAccount", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ uuid: uuid }),
+        }).then((response) => {
+          response.json().then((data) => {
+            console.log(data);
+            createDivs(data);
+            return;
+          });
+        });
+      }
+      function createDivs(data) {
+        let length = data.length;
+
+        let element = document.getElementById("rectData");
+        element.innerHTML = "";
+        for (let i = 0; i < length; i++) {
+          let div = document.createElement("div");
+          div.id = `dot${i}`;
+          div.className += "dot";
+          if (i == account) {
+            div.style.backgroundColor = "black";
+          }
+          element.appendChild(div);
+          element = document.getElementById("rectData");
+        }
+        rows = data;
+        changeData();
+      }
+
+      function rightArrowClick() {
+        if (document.getElementById("dot" + (account + 1)) != null) {
+          let divToGray = document.getElementById("dot" + account);
+          account++;
+          let divToBlack = document.getElementById("dot" + account);
+          divToBlack.style.backgroundColor = "#000000";
+          divToGray.style.backgroundColor = "#C4C4C4";
+          changeData();
+        }
+      }
+      function leftArrowClick() {
+        if (account != 0) {
+          let divToGray = document.getElementById("dot" + account);
+          account--;
+          let divToBlack = document.getElementById("dot" + account);
+          divToBlack.style.backgroundColor = "#000000";
+          divToGray.style.backgroundColor = "#C4C4C4";
+          changeData();
+        }
+      }
+      function changeData() {
+        if (rows.length > 0) {
+          let textNum = document.getElementById("TextNum");
+          textNum.innerHTML = rows[account].BankNum;
+          let textDesc = document.getElementById("TextDesc");
+          textDesc.innerHTML = rows[account].Desc;
+          let img = document.getElementById("bankImage");
+          img.src = "http://localhost:8000/image/" + rows[account].Bank;
+        } else {
+          let textNum = document.getElementById("TextNum");
+          textNum.innerHTML = "Account number";
+          let textDesc = document.getElementById("TextDesc");
+          textDesc.innerHTML = "Account description";
+          let img = document.getElementById("bankImage");
+          img.src = "http://localhost:8000/image/NoData";
+        }
+      }
+      function getCurrentAccount() {
+        document.getElementById("acc").value = account;
+      }
+      function enterDataForLogin() {
+        if (rows != []) {
+          let bankAcc = document.getElementById("bankAccountLog");
+          bankAcc.value = rows[account][1];
+          document.getElementById("loginForm").submit();
+        }
+      }
+      function sendFormData() {
+        document.getElementById("formuuid").value = uuid;
+        let data = $("#form").serialize();
+        fetch("http://localhost:8000/addNewAccount", {
+          method: "POST",
+          headers: {
+            "Content-Type": "Application/x-www-form-urlencoded",
+          },
+          body: data,
+        }).then(() => {
+          getAccountData();
+        });
+      }
+      function removeAccount() {
+        fetch("http://localhost:8000/removeAcc", {
+          method: "POST",
+          headers: {
+            "Content-Type": "Application/json",
+          },
+          body: JSON.stringify({ uuid: uuid, accToRemove: account }),
+        }).then(() => {
+          getAccountData();
+        });
+      }
+      function login() {
+        document.getElementById("logUser").value = rows[account].BankNum;
+        document.getElementById("loginForm").submit();
+      }
+    </script>
+  </head>
+  <body bgcolor="#FFF5F5" id="body">
+    <center>
+      <h1>Welcome to EasyBanking</h1>
+      <br />
+      <h2>Please choose an account</h2>
+      <div id="rectangle">
+        <img
+          id="bankImage"
+          src="http://localhost:8000/image/NoData"
+          width="75%"
+          style="margin-top: 20px; margin-bottom: 10px"
+        />
+        <br />
+        <div
+          class="arrow"
+          id="leftArrow"
+          onclick="leftArrowClick()"
+          style="transform: rotate(135deg); margin-right: 180px"
+        ></div>
+        <div
+          class="arrow"
+          id="rightArrow"
+          onclick="rightArrowClick()"
+          style="transform: rotate(315deg)"
+        ></div>
+        <p id="TextNum" style="font-size: 24px; margin-bottom: 15px">
+          Account number
+        </p>
+        <p id="TextDesc" style="font-size: 24px; margin-bottom: 15px">
+          Account description
+        </p>
+        <div id="rectData"></div>
+      </div>
+      <form
+        action="http://localhost:8000/secondpage"
+        method="POST"
+        id="loginForm"
+      >
+        <input type="hidden" name="username" id="logUser" value="" />
+        <button
+          type="button"
+          onclick="login()"
+          style="
+            margin-top: 20px;
+            font-size: 30px;
+            border-radius: 20%;
+            background-color: #ffb6b6;
+          "
+        >
+          login
+        </button>
+      </form>
+      <br />
+
+      <button
+        onclick="formOpen()"
+        style="
+          margin-top: 20px;
+          font-size: 30px;
+          border-radius: 20%;
+          background-color: #ffb6b6;
+        "
+      >
+        add new account
+      </button>
+      <br />
+      <form id="form" class="form" action="#" style="display: none">
+        <input type="text" name="bankNum" placeholder="Bank account Number" />
+        <input
+          type="text"
+          name="bankDesc"
+          placeholder="Bank account description"
+        />
+        <input type="radio" name="bank" value="habenleumi" checked />habenleumi
+        <input type="radio" name="bank" value="hapoalim" />hapoalim
+        <input type="radio" name="bank" value="yahav" />bank yahav
+        <input type="radio" name="bank" value="leumi" />bank leumi
+        <input type="radio" name="bank" value="mizrachi-tfahut" />mizrachi
+        tfahut
+        <input id="formuuid" name="uuid" type="hidden" value="" />
+        <button type="button" onclick="sendFormData()" style="margin-top: 10px">
+          add account
+        </button>
+      </form>
+      <button
+        onclick="removeAccount()"
+        style="
+          margin-top: 20px;
+          font-size: 30px;
+          border-radius: 20%;
+          background-color: #ffb6b6;
+        "
+      >
+        remove account
+      </button>
+    </center>
   </body>
 </html>

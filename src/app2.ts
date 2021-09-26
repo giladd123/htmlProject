@@ -1,6 +1,8 @@
 const http = require("http");
 let fs = require("fs");
 const sqlite3 = require("sqlite3").verbose();
+let scraper = require("./scraper.js");
+
 let dbFile = "./myDataBase.db";
 let dbExists = fs.existsSync(dbFile);
 let db = new sqlite3.Database(dbFile);
@@ -20,10 +22,18 @@ const requestListener = function (req, res) {
     myReadStream.pipe(res);
   } else if (req.url == "/secondpage") {
     res.writeHead(200, { "Content-Type": "text/html" });
-    let myReadStream = fs.createReadStream(
-      __dirname + "\\data\\secondpage.html"
-    );
-    myReadStream.pipe(res);
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      body = "&" + body;
+      let username = getParameterByName("username", body);
+      getSecondPageHtml().then((html: string) => {
+        html = html.replace("let userName", `let userName = "${username}"`);
+        res.end(html);
+      });
+    });
   } else if (req.url == "/getHamMenu") {
     res.writeHead(200, { "Content-Type": "image/png" });
     let myReadStream = fs.createReadStream(
@@ -36,14 +46,14 @@ const requestListener = function (req, res) {
       body += chunk.toString(); // convert Buffer to string
     });
     req.on("end", () => {
-      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.writeHead(200, { "Content-Type": "application/json" });
       let email: string;
       let password: string;
       body = "&" + body;
       email = getParameterByName("email", body);
       password = getParameterByName("password", body);
-      insertUserToDataBase(email, password).then((uuid) => {
-        res.end(uuid);
+      insertUserToDataBase(email, password).then((uuid: string) => {
+        res.end(JSON.stringify({ uuid: uuid }));
       });
     });
   } else if (req.url == "/addNewAccount") {
@@ -74,7 +84,7 @@ const requestListener = function (req, res) {
     req.on("end", () => {
       let uuid: string = body.uuid;
       getDataFromAccount(uuid).then((data) => {
-        res.end(JSON.stringify(data));
+        res.end(data);
       });
     });
   } else if (req.url.includes("image/")) {
@@ -99,8 +109,13 @@ const requestListener = function (req, res) {
       body = "&" + body;
       email = getParameterByName("email", body);
       password = getParameterByName("password", body);
+      console.log(`${email}  ${password}`);
       checkIfUserExists(email, password).then((uuid: { UID: string }) => {
-        res.end(uuid.UID);
+        if (uuid) {
+          res.end(JSON.stringify({ uuid: uuid.UID }));
+        } else {
+          res.end(JSON.stringify({ uuid: "already exists" }));
+        }
       });
     });
   } else if (req.url == "/getLoginCss") {
@@ -109,14 +124,15 @@ const requestListener = function (req, res) {
     myReadStream.pipe(res);
   } else if (req.url == "/mainPage") {
     res.writeHead(200, { "Content-Type": "text/html" });
-    let body;
+    let body = "";
     req.on("data", (chunk) => {
       body += chunk.toString(); // convert Buffer to string
     });
     req.on("end", () => {
       let uuid;
+      body = "&" + body;
       uuid = getParameterByName("uuid", body);
-      if (uuid) {
+      if (uuid && uuid != "already exists") {
         checkIfUuidExists(uuid).then((exists) => {
           if (exists) {
             createUuidVariableHomePage(uuid).then((html) => {
@@ -128,10 +144,113 @@ const requestListener = function (req, res) {
             );
           }
         });
+      } else if (uuid == "already exists")
+        res.end(
+          '<!DOCTYPE html> <html><head> </head><body bgcolor="#FFF5F5"><p>email already exists in db with other password</p> <br> <a href="http://localhost:8000"><button>Go back</button></a> </body></html>'
+        );
+      else {
+        ('<!DOCTYPE html> <html><head> </head><body bgcolor="#FFF5F5"><p>failed creating user</p> <br> <a href="http://localhost:8000"><button>Go back</button></a> </body></html>');
       }
+    });
+  } else if (req.url == "/removeAcc") {
+    let body;
+    req.on("data", (chunk) => {
+      body = JSON.parse(chunk); // convert Buffer to string
+    });
+    req.on("end", () => {
+      let accToRemove = body.accToRemove;
+      let uuid = body.uuid;
+      removeAccount(uuid, accToRemove).then(() => {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end();
+      });
+    });
+  } else if (req.url == "/getBankTable") {
+    let body;
+    req.on("data", (chunk) => {
+      body = JSON.parse(chunk);
+    });
+    req.on("end", () => {
+      console.log(body.account, body.password);
+      getTablePuppeteer(body.account, body.password).then((table) => {
+        res.writeHead(200, { "Content-Type": "Application/json" });
+        res.end(JSON.stringify(table));
+      });
     });
   }
 };
+async function getSecondPageHtml() {
+  return await new Promise((resolve, reject) => {
+    fs.readFile(
+      `${__dirname}\\data\\secondpage.html`,
+      "utf8",
+      (err: Error, data) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(data.toString());
+      }
+    );
+  });
+}
+async function getTablePuppeteer(account, password) {
+  let table: {
+    dates: string;
+    details: string;
+    kind: string;
+    credit: string;
+    debit: string;
+    balance: string;
+  } = await scraper.getBankData("habenleumi", account, password);
+  return table;
+}
+async function removeAccount(uuid, accToRemove) {
+  await new Promise((resolve, reject) => {
+    db.run("DELETE FROM '" + uuid + "' WHERE Num=" + accToRemove, [], (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(undefined);
+      }
+    });
+  });
+  let rows;
+  await new Promise((resolve, reject) => {
+    let sql = `SELECT * FROM '${uuid}'`;
+    db.all(sql, [], (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  }).then((result) => {
+    rows = result;
+  });
+  let thisAcc = accToRemove;
+  let sql = `UPDATE '${uuid}' SET Num = ${thisAcc} WHERE Num = ${thisAcc + 1}`;
+  await new Promise((resolve, reject) => {
+    db.run(sql, [], (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(undefined);
+      }
+    });
+  });
+  for (; thisAcc < rows.length; thisAcc++) {
+    await new Promise((resolve, reject) => {
+      sql = `UPDATE '${uuid}' SET Num = ${thisAcc} WHERE Num = ${+thisAcc + 1}`;
+      db.run(sql, [], (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
+  }
+}
 async function createUuidVariableHomePage(uuid) {
   let html: string;
   html = await new Promise((resolve, reject) => {
@@ -146,11 +265,11 @@ async function createUuidVariableHomePage(uuid) {
       }
     );
   });
-  html.replace(`let uuid = ""`, `let uuid = "${uuid}"`);
-  return Promise.resolve(html);
+  html = html.replace(`let uuid = "";`, `let uuid = "${uuid}";`);
+  return html;
 }
 async function insertUserToDataBase(email: string, password: string) {
-  let sql = `'SELECT "Email" FROM "UserTable" WHERE "Email" = ${email}`;
+  let sql = `SELECT 'Email' FROM "UserTable" WHERE "Email" = '${email}'`;
   let uuid = await insertNewUser(sql, email, password);
   return uuid;
 }
@@ -172,15 +291,15 @@ async function checkIfUserExists(email: string, password: string) {
       }
     });
   });
-  return Promise.resolve(row);
+  return row;
 }
 async function insertNewUser(sql: string, email: string, password: string) {
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     db.all(sql, [], async (err, rows) => {
       if (err) {
         reject(err);
       } else {
-        let uuid = "";
+        let uuid = "already exists";
         if (rows.length > 0) {
         } else {
           uuid = uuidv4();
@@ -216,7 +335,7 @@ async function insertAccountToUser(
   bankDesc: string,
   bankNum: string
 ) {
-  let sql = `SELECT * FROM ${uuid}`;
+  let sql = 'SELECT * FROM "' + uuid + '"';
   if (bankNum != null && bankDesc != null && bank != null && uuid != null) {
     new Promise((resolve, reject) => {
       db.all(sql, [], (err, rows) => {
@@ -226,7 +345,7 @@ async function insertAccountToUser(
         }
       });
     }).then((result) => {
-      sql = `INSERT INTO ${uuid} VALUES(${result},${bankNum},${bank},${bankDesc})`;
+      sql = `INSERT INTO "${uuid}" VALUES(${result},"${bankNum}","${bank}","${bankDesc}")`;
       new Promise((resolve, reject) => {
         db.run(sql, [], (err) => {
           if (err) {
@@ -258,7 +377,7 @@ async function getDataFromAccount(uuid: string) {
       }
     });
   });
-  return Promise.resolve(JSON.stringify(rows));
+  return JSON.stringify(rows);
 }
 async function checkIfUuidExists(uuid) {
   let sql = `SELECT * FROM UserTable WHERE UID = "${uuid}"`;
