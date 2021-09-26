@@ -1,23 +1,27 @@
-const http = require("http");
-let fs = require("fs");
-const sqlite3 = require("sqlite3").verbose();
-let scraper = require("./scraper.js");
+import * as http from "http";
+import * as fs from "fs";
+import * as path from "path";
+import * as sqlite3 from "sqlite3";
+import * as scraper from "./scraper";
 
 let dbFile = "./myDataBase.db";
 let dbExists = fs.existsSync(dbFile);
 let db = new sqlite3.Database(dbFile);
+
 const requestListener = function (req, res) {
   console.log(req.url);
   if (req.url == "/") {
     res.writeHead(200, { "Content-Type": "text/html" });
     let myReadStream = fs.createReadStream(
-      __dirname + "\\data\\helloworld.html",
+      path.resolve(__dirname + "/../public/helloworld.html"),
       "utf-8"
     );
     myReadStream.pipe(res);
   } else if (req.url == "/getCss") {
     res.writeHead(200, { "Content-Type": "text/css" });
-    let myReadStream = fs.createReadStream(__dirname + "\\data\\style.css");
+    let myReadStream = fs.createReadStream(
+      path.resolve(__dirname + "/../public/style.css")
+    );
 
     myReadStream.pipe(res);
   } else if (req.url == "/secondpage") {
@@ -37,7 +41,7 @@ const requestListener = function (req, res) {
   } else if (req.url == "/getHamMenu") {
     res.writeHead(200, { "Content-Type": "image/png" });
     let myReadStream = fs.createReadStream(
-      __dirname + "\\data\\hamburger-menu.png"
+      path.resolve(__dirname + "/../public/hamburger-menu.png")
     );
     myReadStream.pipe(res);
   } else if (req.url == "/signUp") {
@@ -90,12 +94,14 @@ const requestListener = function (req, res) {
   } else if (req.url.includes("image/")) {
     res.writeHead(200, { "Content-Type": "image/png" });
     let myReadStream = fs.createReadStream(
-      __dirname + "\\data\\images\\" + req.url.substr(7) + ".png"
+      path.resolve(__dirname + "/../public/images/", req.url.substr(7) + ".png")
     );
     myReadStream.pipe(res);
   } else if (req.url == "/firstPageCss") {
     res.writeHead(200, { "Content-Type": "text/css" });
-    let myReadStream = fs.createReadStream(__dirname + "\\data\\firstPage.css");
+    let myReadStream = fs.createReadStream(
+      path.resolve(__dirname + "/../public/firstPage.css")
+    );
     myReadStream.pipe(res);
   } else if (req.url == "/login") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -120,7 +126,9 @@ const requestListener = function (req, res) {
     });
   } else if (req.url == "/getLoginCss") {
     res.writeHead(200, { "Content-Type": "text/css" });
-    let myReadStream = fs.createReadStream(__dirname + "\\data\\logincss.css");
+    let myReadStream = fs.createReadStream(
+      path.resolve(__dirname + "/../public/logincss.css")
+    );
     myReadStream.pipe(res);
   } else if (req.url == "/mainPage") {
     res.writeHead(200, { "Content-Type": "text/html" });
@@ -182,7 +190,7 @@ const requestListener = function (req, res) {
 async function getSecondPageHtml() {
   return await new Promise((resolve, reject) => {
     fs.readFile(
-      `${__dirname}\\data\\secondpage.html`,
+      path.resolve(__dirname + "/../public/secondpage.html"),
       "utf8",
       (err: Error, data) => {
         if (err) {
@@ -194,14 +202,7 @@ async function getSecondPageHtml() {
   });
 }
 async function getTablePuppeteer(account, password) {
-  let table: {
-    dates: string;
-    details: string;
-    kind: string;
-    credit: string;
-    debit: string;
-    balance: string;
-  } = await scraper.getBankData("habenleumi", account, password);
+  let table = await scraper.getBankData("habenleumi", account, password);
   return table;
 }
 async function removeAccount(uuid, accToRemove) {
@@ -251,11 +252,12 @@ async function removeAccount(uuid, accToRemove) {
     });
   }
 }
+
 async function createUuidVariableHomePage(uuid) {
   let html: string;
   html = await new Promise((resolve, reject) => {
     fs.readFile(
-      `${__dirname}\\data\\accountPage.html`,
+      path.resolve(__dirname + "/../public/accountPage.html"),
       "utf8",
       (err: Error, data) => {
         if (err) {
@@ -268,11 +270,13 @@ async function createUuidVariableHomePage(uuid) {
   html = html.replace(`let uuid = "";`, `let uuid = "${uuid}";`);
   return html;
 }
+
 async function insertUserToDataBase(email: string, password: string) {
   let sql = `SELECT 'Email' FROM "UserTable" WHERE "Email" = '${email}'`;
   let uuid = await insertNewUser(sql, email, password);
   return uuid;
 }
+
 function uuidv4() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
     var r = (Math.random() * 16) | 0,
@@ -280,6 +284,7 @@ function uuidv4() {
     return v.toString(16);
   });
 }
+
 async function checkIfUserExists(email: string, password: string) {
   let row = await new Promise((resolve, reject) => {
     let sql = `SELECT UID FROM UserTable WHERE Email = "${email}" AND Password = "${password}"`;
@@ -293,6 +298,7 @@ async function checkIfUserExists(email: string, password: string) {
   });
   return row;
 }
+
 async function insertNewUser(sql: string, email: string, password: string) {
   return await new Promise((resolve, reject) => {
     db.all(sql, [], async (err, rows) => {
@@ -329,6 +335,7 @@ async function insertNewUser(sql: string, email: string, password: string) {
     });
   });
 }
+
 async function insertAccountToUser(
   uuid: string,
   bank: string,
@@ -358,6 +365,7 @@ async function insertAccountToUser(
     });
   }
 }
+
 function getParameterByName(name: string, body = "") {
   name = name.replace(/[\[\]]/g, "\\$&");
   var regex = new RegExp("[&]" + name + "(=([^&#]*)|&|#|$)"),
@@ -366,8 +374,9 @@ function getParameterByName(name: string, body = "") {
   if (!results[2]) return "";
   return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
+
 async function getDataFromAccount(uuid: string) {
-  let rows: string = await new Promise((resolve, reject) => {
+  let rows: string = await new Promise<any>((resolve, reject) => {
     let sql = `SELECT * FROM "${uuid}"`;
     db.all(sql, [], (err, result) => {
       if (err) {
@@ -379,6 +388,7 @@ async function getDataFromAccount(uuid: string) {
   });
   return JSON.stringify(rows);
 }
+
 async function checkIfUuidExists(uuid) {
   let sql = `SELECT * FROM UserTable WHERE UID = "${uuid}"`;
   let exists = await new Promise((resolve, reject) => {
@@ -393,5 +403,8 @@ async function checkIfUuidExists(uuid) {
   });
   return Promise.resolve(exists);
 }
+
 const server = http.createServer(requestListener);
-server.listen(8000);
+server.listen(8000, () => {
+  console.log(`Server listening on port 8000`);
+});
