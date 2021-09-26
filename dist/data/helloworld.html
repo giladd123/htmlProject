@@ -5,7 +5,7 @@
     <title>learning html</title>
     <link rel="stylesheet" href="http://localhost:8000/firstPageCss" />
     <link rel="stylesheet" href="http://localhost:8000/getCss" />
-    <link rel="stylesheet" href="http://localhost:8000/getLoginCss">
+    <link rel="stylesheet" href="http://localhost:8000/getLoginCss" />
     <style>
       table,
       tr,
@@ -18,9 +18,9 @@
         width: 50%;
       }
     </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script>
       window.onload = function () {
-        let dialogUp = true;
         const signUpButton = document.getElementById("signUp");
         const signInButton = document.getElementById("signIn");
         const container = document.getElementById("container");
@@ -32,57 +32,76 @@
         signInButton.addEventListener("click", () => {
           container.classList.remove("right-panel-active");
         });
-        function signUp(data) {
-          console.log(data);
-          // var xhr = new XMLHttpRequest();
-          // xhr.open("POST", "http://localhost:8000/signUp", true);
-          // xhr.setRequestHeader('Content-Type', 'application/json');
-          // xhr.send(data);
-          // console.log(xhr.response);
-        }
       };
+      function signUp() {
+        let data = $("#signUpForm").serialize();
+        fetch("http://localhost:8000/signUp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "Application/x-www-form-urlencoded",
+          },
+          body: data,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            let uuid = data.uuid;
+            console.log(uuid);
+            moveToNextPage(uuid);
+          });
+      }
+      function logIn() {
+        let data = $("#logInForm").serialize();
+        fetch("http://localhost:8000/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "Application/x-www-form-urlencoded",
+          },
+          body: data,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            let uuid = data.uuid;
+            console.log(uuid);
+            moveToNextPage(uuid);
+          });
+      }
+
+      function moveToNextPage(uuid) {
+        let form = document.getElementById("movePageForm");
+        let uuidSU = document.getElementById("uuidSU");
+        uuidSU.value = uuid;
+        form.submit();
+      }
     </script>
   </head>
   <body bgcolor="#FFF5F5">
-    <script>
-      let account = 1;
-      function rightArrowClick() {
-        if (document.getElementById("dot" + (account + 1)) != null) {
-          let divToGray = document.getElementById("dot" + account);
-          account++;
-          let divToBlack = document.getElementById("dot" + account);
-          divToBlack.style.backgroundColor = "#000000";
-          divToGray.style.backgroundColor = "#C4C4C4";
-        }
-      }
-      function leftArrowClick() {
-        if (account != 1) {
-          let divToGray = document.getElementById("dot" + account);
-          account--;
-          let divToBlack = document.getElementById("dot" + account);
-          divToBlack.style.backgroundColor = "#000000";
-          divToGray.style.backgroundColor = "#C4C4C4";
-        }
-      }
-    </script>
+    <form
+      hidden="true"
+      id="movePageForm"
+      method="POST"
+      action="http://localhost:8000/mainPage"
+      style="display: none"
+    >
+      <input id="uuidSU" name="uuid" type="hidden" value="Hello" />
+    </form>
     <div class="container" id="container" style="left: 0%; top: 50%">
       <div class="form-container sign-up-container">
-        <form action="http://localhost:8000/signUp" method="POST">
+        <form id="signUpForm">
           <h1>Create Account</h1>
           <span>or use your email for registration</span>
           <input type="email" name="email" placeholder="Email" />
           <input type="password" name="password" placeholder="Password" />
-          <button type="submit">Sign Up</button>
+          <button onclick="signUp()">Sign Up</button>
         </form>
       </div>
       <div class="form-container sign-in-container">
-        <form action="http://localhost:8000/login" method="POST">
+        <form id="logInForm">
           <h1>Sign in</h1>
           <span>or use your account</span>
           <input type="email" name="email" placeholder="Email" />
           <input type="password" name="password" placeholder="Password" />
           <a href="">Forgot your password?</a>
-          <button>Sign In</button>
+          <button onclick="logIn()">Sign In</button>
         </form>
       </div>
       <div class="overlay-container">

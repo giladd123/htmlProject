@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="he-IL">
+  <head>
+    <link rel="stylesheet" href="http://localhost:8000/getCss" />
+    <script>
+      let userName;
+      function getData() {
+        fetch("http://localhost:8000/getBankTable", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            account: userName,
+            password: document.getElementById("pass").value,
+          }),
+        }).then((response) => {
+          response.json().then((table) => {
+            console.log(table);
+            let table1 = document.getElementById("table");
+
+            for (let i = 0; i < table.debit.length; i++) {
+              let child1 = document.createElement("tr");
+              for (let j = 0; j < 6; j++) {
+                let child2 = document.createElement("td");
+                switch (j) {
+                  case 0:
+                    child2.innerHTML = table.dates[i];
+                    break;
+                  case 1:
+                    child2.innerHTML = table.details[i];
+                    break;
+                  case 2:
+                    child2.innerHTML = table.kind[i];
+                    break;
+                  case 3:
+                    child2.innerHTML = table.credit[i];
+                    break;
+                  case 4:
+                    child2.innerHTML = table.debit[i];
+                    break;
+                  case 5:
+                    child2.innerHTML = table.balance[i];
+                    break;
+                }
+                child1.appendChild(child2);
+              }
+              table1.appendChild(child1);
+            }
+            document.getElementById("askForPass").style.display = "none";
+            document.getElementById("mainPage").style.display = "block";
+          });
+        });
+      }
+    </script>
+  </head>
+  <body bgcolor="#FFF5F5">
+    <div id="askForPass" style="display: inline">
+      <form>
+        <input id="pass" type="password" placeholder="your password" />
+        <button onclick="getData()" type="button">Enter</button>
+      </form>
+    </div>
+    <div id="mainPage" style="display: none">
+      <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()"
+          >&times;</a
+        >
+        <a href="#">Groceries</a>
+        <a href="#">Going out</a>
+        <a href="#">Online shopping</a>
+        <a href="#">Other</a>
+        <a href="#">Settings</a>
+        <a onclick="logout()">Switch account</a>
+        <a>Log out</a>
+      </div>
+      <script>
+        let table;
+        function openNav() {
+          document.getElementById("mySidenav").style.width = "250px";
+        }
+        function logout() {
+          location.replace("http://localhost:8000/");
+        }
+        function closeNav() {
+          document.getElementById("mySidenav").style.width = "0";
+        }
+      </script>
+      <!-- Use any element to open the sidenav -->
+
+      <!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+      <div id="main">
+        <div
+          id="topbar"
+          style="margin-top: 20px; margin-bottom: 50px; vertical-align: middle"
+        >
+          <span onclick="openNav()"
+            ><img
+              src="http://localhost:8000/getHamMenu"
+              style="
+                width: 40px;
+                text-align: left;
+                margin: 20px 0 0 20px;
+                float: left;
+              "
+          /></span>
+          <center>
+            <p style="font-size: 50px; margin: 10px 0 0 0; margin-right: 40px">
+              amount of money in the account
+            </p>
+          </center>
+        </div>
+
+        <center>
+          <h3>
+            <table id="table">
+              <tr>
+                <th>date</th>
+                <th>details</th>
+                <th>kind</th>
+                <th>credit</th>
+                <th>debit</th>
+                <th>balance</th>
+              </tr>
+            </table>
+          </h3>
+        </center>
+      </div>
+    </div>
+  </body>
+</html>
