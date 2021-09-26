@@ -1,10 +1,17 @@
-const puppeteer = require("puppeteer");
-(async () => {})();
-async function getBankData(
+import * as puppeteer from "puppeteer";
+
+export async function getBankData(
   bank: string,
   bankAccount: string,
   password: string
-) {
+): Promise<{
+  dates: puppeteer.ElementHandle<string[]>;
+  details: puppeteer.ElementHandle<string[]>;
+  kind: puppeteer.ElementHandle<string[]>;
+  credit: puppeteer.ElementHandle<string[]>;
+  debit: puppeteer.ElementHandle<string[]>;
+  balance: puppeteer.ElementHandle<string[]>;
+}> {
   if (bank == "habenleumi") {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
@@ -34,42 +41,44 @@ async function getBankData(
     );
     await button3.click();
     await page.waitForNavigation({ waitUntil: "load" });
-    let dates = await page.$$eval(
+    let dates = await page.$$eval<string[]>(
       "#dataTable077 > tbody > tr > td.date.first > span",
       (arr) => arr.map((x) => x.innerHTML)
     );
-    let details = await page.$$eval(
+    let details = await page.$$eval<string[]>(
       "#dataTable077 > tbody > tr > td.reference.wrap_normal > div > a,#dataTable077 > tbody > tr > td.reference.wrap_normal > a > span,#\\32",
       (arr) => arr.map((x) => x.innerHTML)
     );
 
-    let kind = await page.$$eval(
+    let kind = await page.$$eval<string[]>(
       "#dataTable077 > tbody > tr > td.details",
       (arr) => arr.map((x) => x.innerHTML)
     );
 
-    let credit = await page.$$eval(
+    let credit = await page.$$eval<string[]>(
       "#dataTable077 > tbody > tr > td.credit > span",
       (arr) => arr.map((x) => x.innerHTML)
     );
 
-    let debit = await page.$$eval(
+    let debit = await page.$$eval<string[]>(
       "#dataTable077 > tbody > tr > td.debit > span",
       (arr) => arr.map((x) => x.innerHTML)
     );
 
-    let balance = await page.$$eval(
+    let balance = await page.$$eval<string[]>(
       "#dataTable077 > tbody > tr > td.balance.last > span",
       (arr) => arr.map((x) => x.innerHTML)
     );
+
     await browser.close();
     let table = { dates, details, kind, credit, debit, balance };
+
     return table;
   }
 }
+
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
-module.exports.getBankData = getBankData;
